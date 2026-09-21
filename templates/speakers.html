@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% from "_macros.html" import crumbs, pager %}
+{% block title %}{{ title }} | {{ site.name }}{% endblock %}
+{% block description %}{{ description }}{% endblock %}
+{% block head %}
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"CollectionPage","name":{{ title|tojson }},"description":{{ description|tojson }},"url":{{ canonical|tojson }},"inLanguage":"ja",
+ "isPartOf":{"@type":"WebSite","name":{{ site.name|tojson }},"url":{{ url()|tojson }}}}
+</script>
+{% endblock %}
+{% block content %}
+{{ crumbs([('ホーム', url()), ('議員', None)]) }}
+<h1>{{ title }}</h1>
+<p class="lead">{{ description }} 全 {{ count }} 人。</p>
+<table class="facts">
+  <thead><tr><th class="num">順位</th><th>名前</th><th>会派・役職</th><th class="num">発言</th><th class="num">会議</th><th class="num">文字数</th></tr></thead>
+  <tbody>
+  {% for s in items %}
+    <tr>
+      <td class="num">{{ (page - 1) * 60 + loop.index }}</td>
+      <td><a href="{{ url(s.path) }}">{{ s.name }}</a>{% if s.yomi %}<small>{{ s.yomi }}</small>{% endif %}</td>
+      <td>{{ s.label or '—' }}</td>
+      <td class="num">{{ s.count|man }}</td>
+      <td class="num">{{ s.meetings|man }}</td>
+      <td class="num">{{ s.chars|man }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{{ pager(page, pages, base) }}
+<p class="source">出典: 国会会議録検索システム（国立国会図書館）。議員のほか、大臣・政府参考人・参考人も含みます。</p>
+{% endblock %}

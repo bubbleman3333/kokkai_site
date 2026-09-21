@@ -1,0 +1,51 @@
+{# 使い回す部品。crumbs は表示用のパンくずと構造化データを一緒に出す #}
+{% macro crumbs(items) -%}
+<nav class="crumbs">{% for label, href in items %}{% if not loop.first %} › {% endif %}{% if href %}<a href="{{ href }}">{{ label }}</a>{% else %}{{ label }}{% endif %}{% endfor %}</nav>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{% for label, href in items %}{"@type":"ListItem","position":{{ loop.index }},"name":{{ label|tojson }}{% if href %},"item":{{ href|tojson }}{% endif %}}{% if not loop.last %},{% endif %}{% endfor %}]}
+</script>
+{%- endmacro %}
+
+{% macro mcard(m, show_date=True) -%}
+<li class="card">
+  <a class="card-title" href="{{ url(m.path) }}">{% if show_date %}{{ m.day|day }}　{% endif %}{{ m.house }} {{ m.name }} {{ m.issue }}</a>
+  <div class="card-meta">
+    <span class="badge {{ m.house_slug }}">{{ m.house }}</span>
+    <span>{{ m.kind }}</span>
+    {% if m.session %}<span>第{{ m.session }}回国会</span>{% endif %}
+    <span>発言 {{ m.speech_total }} 件</span>
+    <span>{{ m.speakers|length }} 人が登壇</span>
+    {% if m.closing %}<span class="tag">閉会中審査</span>{% endif %}
+  </div>
+  {% if m.agenda %}<p class="card-catch">議題: {{ m.agenda[:3]|join('／') }}</p>{% endif %}
+  {% if m.speakers %}<p class="card-speakers">{% for sp in m.top_speakers(6) %}<a href="{{ url('speaker/' ~ sp.slug ~ '/') }}">{{ sp.name }}<small>{{ sp.count }}</small></a>{% endfor %}</p>{% endif %}
+</li>
+{%- endmacro %}
+
+{% macro wordchips(rows) -%}
+{% if rows %}<div class="chips words">{% for w, c in rows %}<a href="{{ url('search/') }}?q={{ w|urlencode }}">{{ w }}<small>{{ c }}</small></a>{% endfor %}</div>{% endif %}
+{%- endmacro %}
+
+{% macro ranking(rows, limit=20) -%}
+{% if rows %}
+<ol class="rank-list">
+{% for name, label, count, chars in rows[:limit] %}
+  <li>
+    <a href="{{ url('speaker/' ~ speaker_slug(name) ~ '/') }}">{{ name }}</a>
+    {% if label %}<span class="tag">{{ label }}</span>{% endif %}
+    <span class="num">{{ count }} 回・{{ chars|moji }} 字</span>
+  </li>
+{% endfor %}
+</ol>
+{% else %}<p class="small">発言の記録がありません。</p>{% endif %}
+{%- endmacro %}
+
+{% macro pager(page, pages, base) -%}
+{% if pages > 1 %}
+<nav class="pager">
+{% for i in range(1, pages + 1) %}
+  {% if i == page %}<span class="cur">{{ i }}</span>{% else %}<a href="{{ url(base if i == 1 else base ~ 'page/' ~ i ~ '/') }}">{{ i }}</a>{% endif %}
+{% endfor %}
+</nav>
+{% endif %}
+{%- endmacro %}

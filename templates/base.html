@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ site.name }} | {{ site.tagline }}{% endblock %}</title>
+<meta name="description" content="{% block description %}{{ site.description }}{% endblock %}">
+{% if noindex %}<meta name="robots" content="noindex">{% endif %}
+<link rel="canonical" href="{{ canonical }}">
+<link rel="alternate" type="application/rss+xml" title="{{ site.name }} 新着の会議" href="{{ url('feed.xml') }}">
+<link rel="stylesheet" href="{{ url('static/style.css') }}">
+<link rel="icon" href="{{ url('static/favicon.svg') }}" type="image/svg+xml">
+<meta property="og:site_name" content="{{ site.name }}">
+<meta property="og:type" content="{% block ogtype %}website{% endblock %}">
+<meta property="og:title" content="{{ self.title() }}">
+<meta property="og:description" content="{{ self.description() }}">
+<meta property="og:url" content="{{ canonical }}">
+<meta property="og:image" content="{{ url('static/og.svg') }}">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+{% block head %}{% endblock %}
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="{{ url() }}">{{ site.name }}</a>
+    <nav>
+      <a href="{{ url('day/') }}">開催日</a>
+      <a href="{{ url('committee/') }}">委員会</a>
+      <a href="{{ url('speaker/') }}">議員</a>
+      <a href="{{ url('monthly/') }}">月ごと</a>
+      <a href="{{ url('search/') }}">検索</a>
+    </nav>
+    <form class="search-form" action="{{ url('search/') }}" method="get" role="search">
+      <input type="search" name="q" placeholder="議員名・会議名・キーワード" aria-label="検索">
+      <button type="submit">検索</button>
+    </form>
+  </div>
+</header>
+<div class="wrap layout">
+  <main class="content">
+    {% block content %}{% endblock %}
+  </main>
+  <aside class="sidebar">
+    <section class="box">
+      <h2>直近の開催日</h2>
+      <ul class="compact">
+      {% for d, n in sidebar_days %}
+        <li><a href="{{ url('day/' ~ d ~ '/') }}">{{ d }}</a><span class="meta">{{ n }} 会議</span></li>
+      {% endfor %}
+      </ul>
+      <a class="more" href="{{ url('day/') }}">開催日の一覧へ</a>
+    </section>
+    <section class="box">
+      <h2>直近 1 週間の発言回数</h2>
+      <ol class="compact">
+      {% for name, label, count, chars in sidebar_ranking %}
+        <li><a href="{{ url('speaker/' ~ speaker_slug(name) ~ '/') }}">{{ name }}</a><span class="meta">{{ count }} 回{% if label %}・{{ label }}{% endif %}</span></li>
+      {% endfor %}
+      </ol>
+      <a class="more" href="{{ url('speaker/') }}">発言の多い議員を見る</a>
+    </section>
+    <section class="box">
+      <h2>委員会から探す</h2>
+      <div class="chips">
+      {% for c, n in committee_index %}<a href="{{ url(c.path) }}">{{ c.house[0] }}・{{ c.name }}<small>{{ n }}</small></a>{% endfor %}
+      </div>
+      <a class="more" href="{{ url('committee/') }}">委員会の一覧へ</a>
+    </section>
+    <section class="box">
+      <h2>月ごとのまとめ</h2>
+      <ul class="compact">
+      {% for mk, n in month_index %}<li><a href="{{ url('monthly/' ~ mk ~ '/') }}">{{ mk|month }}</a><span class="meta">{{ n }} 会議</span></li>{% endfor %}
+      </ul>
+    </section>
+  </aside>
+</div>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>出典: <a href="https://kokkai.ndl.go.jp/" rel="noopener" target="_blank">国会会議録検索システム</a>（国立国会図書館）の公開 API。
+      このサイトは会議録を機械的に整理したもので、発言の全文は国会会議録検索システムでご確認ください。
+      掲載は直近 1 年分、会議 {{ stats.meetings }} 件・開催日 {{ stats.days }} 日・発言者 {{ stats.speakers }} 人{% if stats.latest %}（最新の会議は {{ stats.latest|day }}）{% endif %}。</p>
+    <p><a href="{{ url('about/') }}">このサイトについて</a> ・ <a href="{{ url('privacy/') }}">プライバシーポリシー</a> ・ <a href="{{ url('feed.xml') }}">RSS</a> ・ <a href="{{ url('search/') }}">検索</a></p>
+    <p>© {{ now.year }} {{ site.name }}</p>
+  </div>
+</footer>
+</body>
+</html>

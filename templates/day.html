@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% from "_macros.html" import crumbs, mcard, wordchips, ranking %}
+{% set heading = d|day ~ 'の国会' %}
+{% set summary = d|day ~ 'に開かれた国会の会議 ' ~ (rows|length) ~ ' 件のまとめ。どの委員会で何が議題になり、誰が何回発言したかを一覧にしています。' %}
+{% block title %}{{ heading }} | {{ site.name }}{% endblock %}
+{% block description %}{{ summary }}{% endblock %}
+{% block head %}
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"CollectionPage","name":{{ heading|tojson }},"description":{{ summary|tojson }},"url":{{ canonical|tojson }},"inLanguage":"ja",
+ "isPartOf":{"@type":"WebSite","name":{{ site.name|tojson }},"url":{{ url()|tojson }}}}
+</script>
+{% endblock %}
+{% block content %}
+{{ crumbs([('ホーム', url()), ('開催日', url('day/')), (d.isoformat(), None)]) }}
+<h1>{{ heading }}</h1>
+<p class="lead">{{ summary }}</p>
+<nav class="pager between">
+  {% if prev %}<a href="{{ url('day/' ~ prev ~ '/') }}">← {{ prev }}</a>{% endif %}
+  <a href="{{ url('day/') }}">開催日の一覧</a>
+  {% if next %}<a href="{{ url('day/' ~ next ~ '/') }}">{{ next }} →</a>{% endif %}
+</nav>
+
+<section>
+  <h2>この日の会議（{{ rows|length }} 件）</h2>
+  <ul class="cards">{% for m in rows %}{{ mcard(m, show_date=False) }}{% endfor %}</ul>
+</section>
+
+<section>
+  <h2>この日の発言回数ランキング</h2>
+  {{ ranking(rank_rows, 30) }}
+</section>
+
+<section>
+  <h2>この日よく出た語</h2>
+  {{ wordchips(words) }}
+  <p class="source">出典: 国会会議録検索システム（国立国会図書館）。語は発言の本文から機械的に数えたものです。</p>
+</section>
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% from "_macros.html" import crumbs, wordchips, ranking %}
+{% set heading = mk|month ~ 'の国会まとめ' %}
+{% set summary = mk|month ~ 'に開かれた国会の会議 ' ~ (rows|length) ~ ' 件（' ~ (mdays|length) ~ ' 日）のまとめ。よく発言した議員、よく出た語、委員会ごとの開催回数を一覧にしています。' %}
+{% block title %}{{ heading }} | {{ site.name }}{% endblock %}
+{% block description %}{{ summary }}{% endblock %}
+{% block head %}
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"CollectionPage","name":{{ heading|tojson }},"description":{{ summary|tojson }},"url":{{ canonical|tojson }},"inLanguage":"ja",
+ "isPartOf":{"@type":"WebSite","name":{{ site.name|tojson }},"url":{{ url()|tojson }}}}
+</script>
+{% endblock %}
+{% block content %}
+{{ crumbs([('ホーム', url()), ('月ごと', url('monthly/')), (mk, None)]) }}
+<h1>{{ heading }}</h1>
+<p class="lead">{{ summary }}</p>
+<div class="stat-row small-stats">
+  <div class="stat"><strong>{{ rows|length|man }}</strong><span>件の会議</span></div>
+  <div class="stat"><strong>{{ mdays|length|man }}</strong><span>日の開催</span></div>
+  <div class="stat"><strong>{{ committees|length|man }}</strong><span>の委員会等</span></div>
+  <div class="stat"><strong>{{ rows|sum(attribute='chars')|moji }}</strong><span>文字</span></div>
+</div>
+
+<section>
+  <h2>この月によく発言した議員・大臣</h2>
+  {{ ranking(rank_rows, 30) }}
+</section>
+
+<section>
+  <h2>この月によく出た語</h2>
+  {{ wordchips(words) }}
+</section>
+
+<section>
+  <h2>よく開かれた委員会</h2>
+  <div class="chips large">
+  {% for pair, n in committees %}<span>{{ pair[0] }}　{{ pair[1] }}<small>{{ n }}</small></span>{% endfor %}
+  </div>
+</section>
+
+<section>
+  <h2>開催日ごとの会議</h2>
+  {% for d in mdays %}
+  <div class="dayblock">
+    <h3><a href="{{ url('day/' ~ d ~ '/') }}">{{ d }}</a><span class="small">　{{ by_day[d]|length }} 会議</span></h3>
+    <ul class="inline-list">
+      {% for m in by_day[d] %}<li><a href="{{ url(m.path) }}">{{ m.house }} {{ m.name }} {{ m.issue }}</a></li>{% endfor %}
+    </ul>
+  </div>
+  {% endfor %}
+</section>
+<p class="source">出典: 国会会議録検索システム（国立国会図書館）</p>
+{% endblock %}

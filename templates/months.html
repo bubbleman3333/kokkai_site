@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% from "_macros.html" import crumbs %}
+{% block title %}{{ title }} | {{ site.name }}{% endblock %}
+{% block description %}{{ description }}{% endblock %}
+{% block head %}
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"CollectionPage","name":{{ title|tojson }},"description":{{ description|tojson }},"url":{{ canonical|tojson }},"inLanguage":"ja",
+ "isPartOf":{"@type":"WebSite","name":{{ site.name|tojson }},"url":{{ url()|tojson }}}}
+</script>
+{% endblock %}
+{% block content %}
+{{ crumbs([('ホーム', url()), ('月ごと', None)]) }}
+<h1>{{ title }}</h1>
+<p class="lead">{{ description }}</p>
+<ul class="daylist">
+{% for mk, n in rows %}
+  <li><a href="{{ url('monthly/' ~ mk ~ '/') }}">{{ mk|month }}</a><span class="num">{{ n }} 会議</span></li>
+{% endfor %}
+</ul>
+<p class="source">出典: 国会会議録検索システム（国立国会図書館）</p>
+{% endblock %}

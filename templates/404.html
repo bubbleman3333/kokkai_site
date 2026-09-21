@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}ページが見つかりません | {{ site.name }}{% endblock %}
+{% block content %}
+<h1>ページが見つかりません</h1>
+<p>掲載は直近 1 年分のため、古い会議のページは整理されている場合があります。
+  <a href="{{ url() }}">トップページ</a>、<a href="{{ url('search/') }}">検索</a>、<a href="{{ url('day/') }}">開催日の一覧</a>から探し直してください。</p>
+<p>お探しの会議録が直近 1 年より前のものであれば、<a href="https://kokkai.ndl.go.jp/" rel="noopener" target="_blank">国会会議録検索システム（国立国会図書館）</a>で探せます。</p>
+{% endblock %}

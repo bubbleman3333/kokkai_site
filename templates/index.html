@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% from "_macros.html" import mcard, wordchips, ranking %}
+{% block head %}
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebSite","name":{{ site.name|tojson }},"url":{{ url()|tojson }},"inLanguage":"ja",
+ "description":{{ site.description|tojson }},
+ "potentialAction":{"@type":"SearchAction","target":{"@type":"EntryPoint","urlTemplate":{{ (url('search/') ~ '?q={search_term_string}')|tojson }}},"query-input":"required name=search_term_string"}}
+</script>
+{% endblock %}
+{% block content %}
+<section class="hero">
+  <h1>{{ site.name }}</h1>
+  <p class="lead">{{ site.description }}</p>
+  {% if latest_day %}
+  <p class="notice {{ 'open' if in_session else 'closed' }}">
+    {% if in_session %}会期中です。いちばん新しい会議録は <a href="{{ url('day/' ~ latest_day.isoformat() ~ '/') }}">{{ latest_day|day }}</a> のものです。
+    {% else %}いまは閉会中です。直近の会議は <a href="{{ url('day/' ~ latest_day.isoformat() ~ '/') }}">{{ latest_day|day }}</a> でした。次の会期が始まると、また毎日増えていきます。{% endif %}
+    <span class="small">（会議録は会議の 3〜5 週間後に公開されます）</span>
+  </p>
+  {% endif %}
+  <div class="stat-row">
+    <div class="stat"><strong>{{ stats.meetings|man }}</strong><span>件の会議</span></div>
+    <div class="stat"><strong>{{ stats.days|man }}</strong><span>日の開催</span></div>
+    <div class="stat"><strong>{{ stats.speakers|man }}</strong><span>人が発言</span></div>
+    <div class="stat"><strong>{{ stats.chars|moji }}</strong><span>文字の会議録</span></div>
+  </div>
+  <p class="hero-actions"><a class="button" href="{{ url('search/') }}">会議を検索する</a> <a class="button ghost" href="{{ url('day/') }}">開催日から見る</a> <a class="button ghost" href="{{ url('feed.xml') }}">RSS で受け取る</a></p>
+</section>
+
+{% if today_meetings %}
+<section>
+  <h2>{{ latest_day|day }}の会議</h2>
+  <ul class="cards">{% for m in today_meetings %}{{ mcard(m, show_date=False) }}{% endfor %}</ul>
+  <a class="more" href="{{ url('day/' ~ latest_day.isoformat() ~ '/') }}">この日のまとめを見る</a>
+</section>
+{% endif %}
+
+<section>
+  <h2>直近 1 週間の発言回数ランキング</h2>
+  <p class="lead">いちばん新しい会議録の日から 1 週間さかのぼって、発言の回数を数えました。</p>
+  {{ ranking(week_ranking, 20) }}
+</section>
+
+<section>
+  <h2>最近よく出た語</h2>
+  <p class="lead">直近 30 日分の会議録から、よく出てきた語を機械的に数えたものです。語をクリックすると、その語が出た会議を検索します。</p>
+  {{ wordchips(hot_words) }}
+</section>
+
+<section>
+  <h2>最近の開催日</h2>
+  {% for d, rows in recent_days %}
+  <div class="dayblock">
+    <h3><a href="{{ url('day/' ~ d ~ '/') }}">{{ d }}</a><span class="small">　{{ rows|length }} 会議</span></h3>
+    <ul class="cards">{% for m in rows[:4] %}{{ mcard(m, show_date=False) }}{% endfor %}</ul>
+    {% if rows|length > 4 %}<a class="more" href="{{ url('day/' ~ d ~ '/') }}">この日の残り {{ rows|length - 4 }} 会議を見る</a>{% endif %}
+  </div>
+  {% endfor %}
+  <a class="more" href="{{ url('day/') }}">開催日の一覧へ</a>
+</section>
+
+<section>
+  <h2>委員会から探す</h2>
+  <div class="chips large">
+  {% for c, n in all_committees %}<a href="{{ url(c.path) }}">{{ c.house }}　{{ c.name }}<small>{{ n }}</small></a>{% endfor %}
+  </div>
+</section>
+
+<section>
+  <h2>月ごとのまとめ</h2>
+  <div class="chips large">
+  {% for mk, n in months %}<a href="{{ url('monthly/' ~ mk ~ '/') }}">{{ mk|month }}<small>{{ n }}</small></a>{% endfor %}
+  </div>
+</section>
+
+<section class="howto">
+  <h2>このサイトの見方</h2>
+  <ol>
+    <li><a href="{{ url('day/') }}">開催日</a>から、その日に開かれた会議と発言者ランキングをたどれます。</li>
+    <li>会議のページには、議題・発言者の一覧・各発言の冒頭の抜粋・よく出た語が並びます。全文は各発言の「会議録で読む」から国会会議録検索システムへ。</li>
+    <li><a href="{{ url('speaker/') }}">議員のページ</a>では、その人が発言した会議・月ごとの発言回数・よく使う語が見られます。</li>
+    <li>データは毎日自動で取り込んでいます。会議録は会議の 3〜5 週間後に公開されるため、当日の議事がすぐ載るわけではありません。</li>
+  </ol>
+</section>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% from "_macros.html" import crumbs, pager %}
+{% block title %}{{ title }} | {{ site.name }}{% endblock %}
+{% block description %}{{ description }}{% endblock %}
+{% block head %}
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"CollectionPage","name":{{ title|tojson }},"description":{{ description|tojson }},"url":{{ canonical|tojson }},"inLanguage":"ja",
+ "isPartOf":{"@type":"WebSite","name":{{ site.name|tojson }},"url":{{ url()|tojson }}}}
+</script>
+{% endblock %}
+{% block content %}
+{{ crumbs([('ホーム', url()), ('開催日', None)]) }}
+<h1>{{ title }}</h1>
+<p class="lead">{{ description }} 全 {{ count }} 日。</p>
+<ul class="daylist">
+{% for d, n in items %}
+  <li><a href="{{ url('day/' ~ d ~ '/') }}">{{ d }}</a><span class="num">{{ n }} 会議</span></li>
+{% endfor %}
+</ul>
+{{ pager(page, pages, base) }}
+<p class="source">出典: 国会会議録検索システム（国立国会図書館）</p>
+{% endblock %}

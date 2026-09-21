@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% from "_macros.html" import crumbs %}
+{% block title %}{{ title }} | {{ site.name }}{% endblock %}
+{% block description %}{{ description }}{% endblock %}
+{% block content %}
+{{ crumbs([('ホーム', url()), ('検索', None)]) }}
+<h1>{{ title }}</h1>
+<p class="lead">{{ description }} 条件を変えるとその場で結果が変わります。</p>
+<form id="f" class="filter" onsubmit="return false">
+  <label>院
+    <select name="house"><option value="">すべて</option><option value="衆議院">衆議院</option><option value="参議院">参議院</option><option value="両院">両院</option></select>
+  </label>
+  <label>会議名
+    <select name="meeting"><option value="">すべて</option></select>
+  </label>
+  <label>月
+    <select name="month"><option value="">すべて</option></select>
+  </label>
+  <label>発言者
+    <input type="search" name="speaker" placeholder="例: 高市早苗">
+  </label>
+  <label class="grow">キーワード
+    <input type="search" name="q" placeholder="例: 物価、エネルギー、子育て">
+  </label>
+  <label>並び順
+    <select name="sort"><option value="new">新しい順</option><option value="old">古い順</option><option value="speech">発言が多い順</option></select>
+  </label>
+</form>
+<p id="count" class="lead"></p>
+<ul id="results" class="cards"></ul>
+<p id="more-wrap"><button id="more" class="button ghost" type="button">さらに表示</button></p>
+<p class="source">出典: 国会会議録検索システム（国立国会図書館）。キーワードは、会議名・議題・よく出た語から探します。発言の全文検索は<a href="https://kokkai.ndl.go.jp/" rel="noopener" target="_blank">国会会議録検索システム</a>をご利用ください。</p>
+<script>
+(function () {
+  // ページからの相対パスにしておくと、ローカル確認でも公開先でも同一オリジンで読める
+  var DATA_URL = '../search.json';
+  var BASE = '../m/';
+  var form = document.getElementById('f');
+  var list = document.getElementById('results');
+  var countEl = document.getElementById('count');
+  var moreBtn = document.getElementById('more');
+  var rows = [], shown = 0, filtered = [], PAGE = 40;
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  function card(r) {
+    var head = esc(r.d) + '　' + esc(r.h) + ' ' + esc(r.m) + ' ' + esc(r.n);
+    var meta = '<span class="badge">' + esc(r.h) + '</span>' + (r.s ? '<span>第' + r.s + '回国会</span>' : '') +
+      '<span>発言 ' + r.c + ' 件</span><span>' + r.p.length + ' 人が登壇</span>';
+    var agenda = r.a && r.a.length ? '<p class="card-catch">議題: ' + esc(r.a.slice(0, 3).join('／')) + '</p>' : '';
+    var words = r.w && r.w.length ? '<p class="card-speakers">' + r.w.slice(0, 8).map(function (w) { return '<span>' + esc(w) + '</span>'; }).join('') + '</p>' : '';
+    return '<li class="card"><a class="card-title" href="' + BASE + esc(r.i) + '/">' + head + '</a>' +
+      '<div class="card-meta">' + meta + '</div>' + agenda + words + '</li>';
+  }
+  function apply() {
+    var v = {};
+    Array.prototype.forEach.call(form.elements, function (el) { if (el.name) v[el.name] = (el.value || '').trim(); });
+    var q = v.q.toLowerCase(), sp = v.speaker;
+    filtered = rows.filter(function (r) {
+      if (v.house && r.h !== v.house) return false;
+      if (v.meeting && r.m !== v.meeting) return false;
+      if (v.month && r.d.slice(0, 7) !== v.month) return false;
+      if (sp && r.p.join('').indexOf(sp) < 0) return false;
+      if (q && (r.m + ' ' + r.n + ' ' + r.a.join(' ') + ' ' + r.w.join(' ') + ' ' + r.p.join(' ')).toLowerCase().indexOf(q) < 0) return false;
+      return true;
+    });
+    if (v.sort === 'old') filtered.sort(function (a, b) { return a.d < b.d ? -1 : 1; });
+    else if (v.sort === 'speech') filtered.sort(function (a, b) { return b.c - a.c; });
+    else filtered.sort(function (a, b) { return a.d > b.d ? -1 : 1; });
+    list.innerHTML = ''; shown = 0; showMore();
+    var p = new URLSearchParams();
+    Object.keys(v).forEach(function (k) { if (v[k] && !(k === 'sort' && v[k] === 'new')) p.set(k, v[k]); });
+    history.replaceState(null, '', location.pathname + (p.toString() ? '?' + p.toString() : ''));
+  }
+  function showMore() {
+    var chunk = filtered.slice(shown, shown + PAGE);
+    list.insertAdjacentHTML('beforeend', chunk.map(card).join(''));
+    shown += chunk.length;
+    countEl.textContent = filtered.length + ' 件の会議が該当（' + shown + ' 件を表示）';
+    moreBtn.style.display = shown < filtered.length ? '' : 'none';
+  }
+  function fill(sel, values) {
+    values.forEach(function (x) { var o = document.createElement('option'); o.value = x; o.textContent = x; sel.appendChild(o); });
+  }
+  moreBtn.addEventListener('click', showMore);
+  form.addEventListener('input', apply);
+  form.addEventListener('change', apply);
+  fetch(DATA_URL).then(function (r) { return r.json(); }).then(function (data) {
+    rows = data;
+    var names = {}, months = {};
+    rows.forEach(function (r) { names[r.m] = (names[r.m] || 0) + 1; months[r.d.slice(0, 7)] = 1; });
+    fill(form.elements.meeting, Object.keys(names).sort(function (a, b) { return names[b] - names[a]; }));
+    fill(form.elements.month, Object.keys(months).sort().reverse());
+    var p = new URLSearchParams(location.search);
+    Array.prototype.forEach.call(form.elements, function (el) { if (el.name && p.has(el.name)) el.value = p.get(el.name); });
+    apply();
+  }).catch(function () { countEl.textContent = 'データを読み込めませんでした。'; });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% from "_macros.html" import crumbs, mcard, wordchips, ranking %}
+{% set summary = c.house ~ c.name ~ 'の直近 1 年の開催日一覧。' ~ (rows|length) ~ ' 回の会議について、議題・登壇した議員・よく出た語をまとめています。' %}
+{% block title %}{{ c.title }}の開催日一覧 | {{ site.name }}{% endblock %}
+{% block description %}{{ summary }}{% endblock %}
+{% block head %}
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"CollectionPage","name":{{ (c.title ~ 'の開催日一覧')|tojson }},"description":{{ summary|tojson }},"url":{{ canonical|tojson }},"inLanguage":"ja",
+ "about":{"@type":"GovernmentOrganization","name":{{ c.title|tojson }}},
+ "isPartOf":{"@type":"WebSite","name":{{ site.name|tojson }},"url":{{ url()|tojson }}}}
+</script>
+{% endblock %}
+{% block content %}
+{{ crumbs([('ホーム', url()), ('委員会', url('committee/')), (c.title, None)]) }}
+<h1>{{ c.title }}</h1>
+<p class="lead">{{ summary }}</p>
+<div class="stat-row small-stats">
+  <div class="stat"><strong>{{ rows|length|man }}</strong><span>回の開催</span></div>
+  <div class="stat"><strong>{{ rank_rows|length|man }}</strong><span>人以上が登壇</span></div>
+  <div class="stat"><strong>{{ rows[0].day.month }}/{{ rows[0].day.day }}</strong><span>直近の開催</span></div>
+  <div class="stat"><strong>{{ c.kind }}</strong><span>種別</span></div>
+</div>
+
+<section>
+  <h2>よく発言する議員・大臣</h2>
+  {{ ranking(rank_rows, 20) }}
+</section>
+
+<section>
+  <h2>この委員会でよく出た語</h2>
+  {{ wordchips(words) }}
+</section>
+
+<section>
+  <h2>開催日の一覧（{{ rows|length }} 回）</h2>
+  <ul class="cards">{% for m in rows %}{{ mcard(m) }}{% endfor %}</ul>
+</section>
+<p class="source">出典: 国会会議録検索システム（国立国会図書館）</p>
+{% endblock %}

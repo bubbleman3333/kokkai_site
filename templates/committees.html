@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from "_macros.html" import crumbs %}
+{% block title %}{{ title }} | {{ site.name }}{% endblock %}
+{% block description %}{{ description }}{% endblock %}
+{% block head %}
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"CollectionPage","name":{{ title|tojson }},"description":{{ description|tojson }},"url":{{ canonical|tojson }},"inLanguage":"ja",
+ "isPartOf":{"@type":"WebSite","name":{{ site.name|tojson }},"url":{{ url()|tojson }}}}
+</script>
+{% endblock %}
+{% block content %}
+{{ crumbs([('ホーム', url()), ('委員会', None)]) }}
+<h1>{{ title }}</h1>
+<p class="lead">{{ description }} 全 {{ rows|length }} 件。</p>
+{% for house in ['衆議院', '参議院', '両院', '両院協議会'] %}
+{% set group = rows|selectattr('0.house', 'equalto', house)|list %}
+{% if group %}
+<section>
+  <h2>{{ house }}</h2>
+  <ul class="daylist">
+  {% for c, n in group %}
+    <li><a href="{{ url(c.path) }}">{{ c.name }}</a><span class="tag">{{ c.kind }}</span><span class="num">{{ n }} 回</span></li>
+  {% endfor %}
+  </ul>
+</section>
+{% endif %}
+{% endfor %}
+<p class="source">出典: 国会会議録検索システム（国立国会図書館）</p>
+{% endblock %}

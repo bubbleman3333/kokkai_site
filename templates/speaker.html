@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% from "_macros.html" import crumbs, wordchips %}
+{% set summary = s.name ~ 'さんの国会での発言まとめ。直近 1 年で ' ~ s.meetings ~ ' 回の会議に登壇し、' ~ s.count ~ ' 回発言しています。発言した会議の一覧・月ごとの発言回数・よく使う語を掲載しています。' %}
+{% block title %}{{ s.name }}の国会発言（{{ s.count }} 回） | {{ site.name }}{% endblock %}
+{% block description %}{{ summary }}{% endblock %}
+{% block ogtype %}profile{% endblock %}
+{% block head %}
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"ProfilePage","url":{{ canonical|tojson }},"inLanguage":"ja","description":{{ summary|tojson }},
+ "mainEntity":{"@type":"Person","name":{{ s.name|tojson }}{% if s.yomi %},"alternateName":{{ s.yomi|tojson }}{% endif %}{% if s.group %},"affiliation":{"@type":"Organization","name":{{ s.group|tojson }}}{% endif %}{% if s.position %},"jobTitle":{{ s.position|tojson }}{% endif %}},
+ "isPartOf":{"@type":"WebSite","name":{{ site.name|tojson }},"url":{{ url()|tojson }}}}
+</script>
+{% endblock %}
+{% block content %}
+{{ crumbs([('ホーム', url()), ('議員', url('speaker/')), (s.name, None)]) }}
+<h1>{{ s.name }}の国会発言</h1>
+<p class="lead">
+  {% if s.yomi %}{{ s.yomi }}　{% endif %}
+  {% if s.group %}<span class="tag">{{ s.group }}</span>{% endif %}
+  {% if s.position %}<span class="tag">{{ s.position }}</span>{% endif %}
+  {% if s.role %}<span class="tag">{{ s.role }}</span>{% endif %}
+</p>
+<div class="stat-row small-stats">
+  <div class="stat"><strong>{{ s.count|man }}</strong><span>回の発言</span></div>
+  <div class="stat"><strong>{{ s.meetings|man }}</strong><span>会議に登壇</span></div>
+  <div class="stat"><strong>{{ s.chars|moji }}</strong><span>文字</span></div>
+  <div class="stat"><strong>{{ (s.chars / s.count)|round|int|man if s.count else 0 }}</strong><span>字／発言</span></div>
+</div>
+
+<section>
+  <h2>月ごとの発言回数</h2>
+  {% if months %}
+  <ul class="bars">
+  {% for mk, n in months %}
+    <li><a class="bar-label" href="{{ url('monthly/' ~ mk ~ '/') }}">{{ mk|month }}</a>
+      <span class="bar"><i style="width: {{ (n * 100 / peak)|round(1) }}%"></i></span>
+      <span class="num">{{ n }}</span></li>
+  {% endfor %}
+  </ul>
+  {% else %}<p class="small">記録がありません。</p>{% endif %}
+</section>
+
+{% if s.words %}
+<section>
+  <h2>よく使う語</h2>
+  {{ wordchips(s.words.most_common(30)) }}
+  <p class="source">この人の発言だけを集めて、漢字 2 文字以上・カタカナ 3 文字以上の語を機械的に数えたものです。</p>
+</section>
+{% endif %}
+
+<section>
+  <h2>発言した会議（{{ s.meetings }} 件{% if s.meetings > rows|length %}のうち新しい {{ rows|length }} 件{% endif %}）</h2>
+  <table class="facts">
+    <thead><tr><th>日付</th><th>会議</th><th class="num">発言</th><th class="num">文字数</th></tr></thead>
+    <tbody>
+    {% for m, count, chars in rows %}
+      <tr>
+        <td><a href="{{ url('day/' ~ m.date_str ~ '/') }}">{{ m.date_str }}</a></td>
+        <td><a href="{{ url(m.path) }}">{{ m.house }} {{ m.name }} {{ m.issue }}</a></td>
+        <td class="num">{{ count }}</td>
+        <td class="num">{{ chars|man }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+<p class="source">出典: 国会会議録検索システム（国立国会図書館）。発言の全文は各会議のページからたどれます。同姓同名の方は区別していません。</p>
+{% endblock %}

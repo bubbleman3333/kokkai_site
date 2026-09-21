@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% from "_macros.html" import crumbs, mcard, wordchips %}
+{% set heading = m.day|day ~ '　' ~ m.house ~ ' ' ~ m.name ~ ' ' ~ m.issue %}
+{% set summary = m.day|day ~ 'の' ~ m.house ~ m.name ~ m.issue ~ 'の会議録まとめ。発言 ' ~ m.speech_total ~ ' 件、' ~ (m.speakers|length) ~ ' 人が登壇。議題・発言者ランキング・各発言の冒頭の抜粋・よく出た語を掲載しています。' %}
+{% block title %}{{ heading }} | {{ site.name }}{% endblock %}
+{% block description %}{{ summary }}{% endblock %}
+{% block ogtype %}article{% endblock %}
+{% block head %}
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Event","name":{{ (m.house ~ ' ' ~ m.name ~ ' ' ~ m.issue)|tojson }},
+ "startDate":{{ m.date_str|tojson }},"eventStatus":"https://schema.org/EventScheduled",
+ "eventAttendanceMode":"https://schema.org/OfflineEventAttendanceMode",
+ "description":{{ summary|tojson }},"url":{{ canonical|tojson }},
+ "location":{"@type":"Place","name":{{ m.house|tojson }},"address":{"@type":"PostalAddress","addressLocality":"千代田区","addressRegion":"東京都","addressCountry":"JP"}},
+ "organizer":{"@type":"GovernmentOrganization","name":{{ m.house|tojson }}},
+ "performer":[{% for sp in m.top_speakers(10) %}{"@type":"Person","name":{{ sp.name|tojson }}}{% if not loop.last %},{% endif %}{% endfor %}],
+ "isAccessibleForFree":true}
+</script>
+{% endblock %}
+{% block content %}
+{{ crumbs([('ホーム', url()), ('委員会', url('committee/')), (committee.title, url(committee.path)), (m.day|day ~ ' ' ~ m.issue, None)]) }}
+<h1>{{ heading }}</h1>
+<p class="lead">
+  <span class="badge {{ m.house_slug }}">{{ m.house }}</span>
+  <a href="{{ url(committee.path) }}">{{ m.name }}</a> {{ m.issue }}{% if m.session %}・第{{ m.session }}回国会{% endif %}{% if m.closing %}・閉会中審査{% endif %}
+</p>
+<div class="stat-row small-stats">
+  <div class="stat"><strong>{{ m.speech_total|man }}</strong><span>発言</span></div>
+  <div class="stat"><strong>{{ m.speakers|length|man }}</strong><span>人が登壇</span></div>
+  <div class="stat"><strong>{{ m.chars|moji }}</strong><span>文字</span></div>
+  <div class="stat"><strong><a href="{{ url('day/' ~ m.date_str ~ '/') }}">{{ m.day.month }}/{{ m.day.day }}</a></strong><span>この日の国会</span></div>
+</div>
+
+{% if m.agenda %}
+<section>
+  <h2>この会議の議題</h2>
+  <ol class="agenda">{% for a in m.agenda %}<li>{{ a }}</li>{% endfor %}</ol>
+  <p class="source">会議録冒頭の「本日の会議に付した案件」から機械的に取り出したものです。</p>
+</section>
+{% endif %}
+
+<section>
+  <h2>誰が何回話したか</h2>
+  <table class="facts speakers">
+    <thead><tr><th>発言者</th><th>会派</th><th>役職</th><th class="num">回数</th><th class="num">文字数</th></tr></thead>
+    <tbody>
+    {% for sp in m.speakers %}
+      <tr>
+        <td><a href="{{ url('speaker/' ~ sp.slug ~ '/') }}">{{ sp.name }}</a>{% if sp.yomi %}<small>{{ sp.yomi }}</small>{% endif %}</td>
+        <td>{{ sp.group or '—' }}</td>
+        <td>{{ sp.position or sp.role or '—' }}</td>
+        <td class="num">{{ sp.count }}</td>
+        <td class="num">{{ sp.chars|man }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>この会議でよく出た語</h2>
+  {{ wordchips(m.words) }}
+  <p class="source">発言の本文から、漢字 2 文字以上・カタカナ 3 文字以上の語を機械的に数えたものです（手続き用語は除いています）。</p>
+</section>
+
+<section>
+  <h2>発言の抜粋</h2>
+  <p class="lead">主な発言の冒頭だけを載せています{% if m.speech_total > m.speeches|length %}（{{ m.speech_total }} 件のうち長いもの {{ m.speeches|length }} 件）{% endif %}。全文は各発言の「会議録で読む」からどうぞ。</p>
+  <ol class="speeches">
+  {% for s in m.speeches %}
+    <li>
+      <div class="sp-head">
+        <a class="sp-name" href="{{ url('speaker/' ~ speaker_slug(s.speaker) ~ '/') }}">{{ s.speaker }}</a>
+        {% if s.position %}<span class="tag">{{ s.position }}</span>{% endif %}
+        <span class="num">{{ s.chars|man }} 字</span>
+        <a class="sp-src" href="{{ m.speech_url(s.order) }}" rel="nofollow noopener" target="_blank">会議録で読む</a>
+      </div>
+      <p>{{ s.excerpt }}</p>
+    </li>
+  {% endfor %}
+  </ol>
+</section>
+
+<section class="official">
+  <h2>この会議録の出典</h2>
+  <p>出典: <a href="{{ m.ndl_url }}" rel="noopener" target="_blank">国会会議録検索システム（国立国会図書館）</a>
+    {% if m.pdf_url %}・<a href="{{ m.pdf_url }}" rel="nofollow noopener" target="_blank">PDF</a>{% endif %}</p>
+  <p class="source">会議録 ID: {{ m.issue_id }}</p>
+  <p class="cta"><a class="button" href="{{ m.ndl_url }}" rel="noopener" target="_blank">会議録の全文を読む</a></p>
+</section>
+
+{% if prev or next %}
+<section>
+  <h2>同じ会議の前後</h2>
+  <ul class="cards">
+    {% if next %}{{ mcard(next) }}{% endif %}
+    {% if prev %}{{ mcard(prev) }}{% endif %}
+  </ul>
+</section>
+{% endif %}
+
+{% if same_day %}
+<section>
+  <h2>同じ日に開かれた会議</h2>
+  <ul class="cards">{% for x in same_day %}{{ mcard(x, show_date=False) }}{% endfor %}</ul>
+  <a class="more" href="{{ url('day/' ~ m.date_str ~ '/') }}">{{ m.day|day }}のまとめへ</a>
+</section>
+{% endif %}
+{% endblock %}

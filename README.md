@@ -3,7 +3,7 @@
 衆議院・参議院の本会議と委員会の会議録を、国立国会図書館「国会会議録検索システム」の公開 API から
 毎日取り込み、静的サイトとして GitHub Pages に配信する。**運用費ゼロ**（API はキー不要、GitHub Actions と Pages は無料枠）。
 
-- 公開先: https://bubbleman3333.github.io/kokkai_site/
+- 公開先: https://kokkai-watch.rakunowa.workers.dev/
 - 掲載するのは直近 1 年分。会議録は会議の **3〜5 週間後**に公開されるので、きのうの委員会がすぐ載るわけではない。
 
 ## 仕組み
